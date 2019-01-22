@@ -21,9 +21,9 @@ func main() {
 	clog.Info("Initializing the githubber...")
 
 	// How many commits should I make?
-	numCommits := rand.Intn(6)
+	numCommits := getRandomInt(1, 6)
 	if numCommits > 4 { // reduce the likelihood of 6 commits
-		numCommits = rand.Intn(6)
+		numCommits = getRandomInt(3, 6)
 	}
 
 	clog.Infof("Number of commits to be made right now: %d", numCommits)
@@ -146,6 +146,11 @@ func doGitPush() error {
 	}
 	clog.Info(out.String())
 	return nil
+}
+
+func getRandomInt(min, max int) int {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Intn(max-min)
 }
 
 func getRandomCommitMessage() (string, error) {
