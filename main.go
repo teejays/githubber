@@ -109,7 +109,7 @@ func doGitAdd() error {
 	return nil
 }
 func doGitCommit() error {
-	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("'Made editions to the the file on %s'", time.Now().Format(time.RFC1123Z)))
+	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("Made editions to the the file on %s", time.Now().Format(time.RFC1123Z)))
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
