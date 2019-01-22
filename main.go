@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/teejays/clog"
 )
@@ -12,37 +15,65 @@ import (
 const fileName string = `dummy.txt`
 
 func main() {
-	var err error
+	clog.Info("Initializing the githubber...")
 
-	clog.Info("Starting to code...")
+	// How many commits should I make?
+	numCommits := rand.Intn(6)
+	if numCommits > 4 { // reduce the likelihood of 6 commits
+		numCommits = rand.Intn(6)
+	}
+
+	clog.Infof("Number of commits to be made right now: %d", numCommits)
+
+	for i := 0; i < numCommits; i++ {
+		clog.Infof("Processing Commit %d of %d...", i+1, numCommits)
+		err := doActivity()
+		if err != nil {
+			clog.FatalErr(err)
+		}
+	}
+
+	clog.Infof("Finished %d commits.", numCommits)
+
+	return
+}
+
+func doActivity() (err error) {
+
+	clog.Info("Starting activity...")
+
+	clog.Info(" - Starting to code...")
 	err = doCoding()
 	if err != nil {
-		clog.FatalErr(err)
+		return err
 	}
-	clog.Info("Finished coding.")
+	clog.Info(" - Finished coding.")
 
-	clog.Info("Starting to add...")
+	clog.Info(" - Starting to add...")
 	err = doGitAdd()
 	if err != nil {
-		clog.FatalErr(err)
+		return err
 	}
-	clog.Info("Finished adding.")
+	clog.Info(" - Finished adding.")
 
-	clog.Info("Starting to commit...")
+	clog.Info(" - Starting to commit...")
 	err = doGitCommit()
 	if err != nil {
-		clog.FatalErr(err)
+		return err
 	}
-	clog.Info("Finished commiting.")
+	clog.Info(" - Finished commiting.")
 
-	clog.Info("Starting to push...")
+	clog.Info(" - Starting to push...")
 	err = doGitPush()
 	if err != nil {
-		clog.FatalErr(err)
+		return err
 	}
-	clog.Info("Finished pushing.")
+	clog.Info(" - Finished pushing.")
 
-	clog.Info("Finished!")
+	clog.Info("Finished activity.")
+
+	return
+
 }
 
 func doCoding() error {
@@ -53,9 +84,8 @@ func doCoding() error {
 	}
 
 	// change/append something
-	newText := "This is today's commit.\n"
+	newText := fmt.Sprintf("This is a test commit on %s.\n", time.Now().Format(time.RFC1123Z))
 	newContent := append(content, []byte(newText)...)
-
 	// Write the file
 	err = ioutil.WriteFile(fileName, newContent, os.ModePerm)
 	if err != nil {
@@ -79,7 +109,7 @@ func doGitAdd() error {
 	return nil
 }
 func doGitCommit() error {
-	cmd := exec.Command("git", "commit", "-m", "'Made editions to the the file'")
+	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("'Made editions to the the file on %s'", time.Now().Format(time.RFC1123Z)))
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
