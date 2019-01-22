@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
 	"time"
@@ -12,7 +13,9 @@ import (
 	"github.com/teejays/clog"
 )
 
-const fileName string = `dummy.txt`
+const (
+	FILE_NAME string = `dummy.txt`
+)
 
 func main() {
 	clog.Info("Initializing the githubber...")
@@ -78,7 +81,7 @@ func doActivity() (err error) {
 
 func doCoding() error {
 	// read the file
-	content, err := ioutil.ReadFile(fileName)
+	content, err := ioutil.ReadFile(FILE_NAME)
 	if err != nil {
 		return err
 	}
@@ -87,7 +90,7 @@ func doCoding() error {
 	newText := fmt.Sprintf("This is a test commit on %s.\n", time.Now().Format(time.RFC1123Z))
 	newContent := append(content, []byte(newText)...)
 	// Write the file
-	err = ioutil.WriteFile(fileName, newContent, os.ModePerm)
+	err = ioutil.WriteFile(FILE_NAME, newContent, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -97,7 +100,7 @@ func doCoding() error {
 }
 
 func doGitAdd() error {
-	cmd := exec.Command("git", "add", fileName)
+	cmd := exec.Command("git", "add", FILE_NAME)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
@@ -108,11 +111,21 @@ func doGitAdd() error {
 	clog.Info(out.String())
 	return nil
 }
+
 func doGitCommit() error {
-	cmd := exec.Command("git", "commit", "-m", fmt.Sprintf("Made editions to the the file on %s", time.Now().Format(time.RFC1123Z)))
+	commitMessage, err := getRandomCommitMessage()
+	if err != nil {
+		commitMessage = getDefaultCommitMessage()
+		clog.Warnf("There was an error generating a commit message: %s\nUsing standard test commit message: %s", err, commitMessage)
+		return nil
+	}
+
+	clog.Debugf("Using the commit message: %s", commitMessage)
+
+	cmd := exec.Command("git", "commit", "-m", commitMessage)
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		clog.Error(out.String())
 		return err
@@ -133,4 +146,23 @@ func doGitPush() error {
 	}
 	clog.Info(out.String())
 	return nil
+}
+
+func getRandomCommitMessage() (string, error) {
+	resp, err := http.Get("http://whatthecommit.com/index.txt")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+func getDefaultCommitMessage() string {
+	return fmt.Sprintf("This is a test commit on %s", time.Now().Format(`Monday, Jan 2 2006 3:04PM`))
 }
