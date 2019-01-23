@@ -8,35 +8,82 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/teejays/clog"
 )
 
 const (
+	ENABLE_COMMMIT bool = true
+	ENABLE_PUSH    bool = true
+
 	FILE_NAME string = `dummy.txt`
+
+	NUM_ACTIVITIES_MIN int = 1
+	NUM_ACTIVITIES_MAX int = 7
+
+	WAIT_DURATION_SECS_MIN int = 0
+	WAIT_DURATION_SECS_MAX int = 10
+
+	MAX_COMMIT_MESSAGE_LEN int = 200
+)
+
+var (
+	ErrCommitMessageTooLong error = fmt.Errorf("Commit message is too long, which could mean an error.")
 )
 
 func main() {
 	clog.Info("Initializing the githubber...")
 
 	// How many commits should I make?
-	numCommits := getRandomInt(1, 6)
-	if numCommits > 4 { // reduce the likelihood of 6 commits
-		numCommits = getRandomInt(3, 6)
+	var numActivities int = getRandomInt(NUM_ACTIVITIES_MIN, NUM_ACTIVITIES_MAX)
+	clog.Infof("Number of activities to be made right now: %d", numActivities)
+
+	// WaitGroup for concurrency
+	var wg sync.WaitGroup
+
+	for i := 0; i < numActivities; i++ {
+
+		// For each activity, we should probably add some randomized wait times (between 1 and 3600 secs)
+		// so the commit history looks natural,
+		waitDuration := time.Second * time.Duration(getRandomInt(WAIT_DURATION_SECS_MIN, WAIT_DURATION_SECS_MAX))
+
+		// Add a counter to wait group so we can keep track of how many concurrent goroutines are running
+		wg.Add(1)
+
+		// Each activity is going to be it's own goroutine.
+		go func(i int, wait time.Duration) {
+
+			// Catch any panics that happen in this goroutine
+			defer func() {
+				if r := recover(); r != nil {
+					clog.Errorf("Panic in goroutine (recovered): %s", r)
+				}
+				wg.Done()
+			}()
+
+			clog.Infof("Processing Activity %d of %d...", i+1, numActivities)
+			clog.Infof(" - Going to wait for %s before doing the activity", wait)
+
+			// Wait for sometime before doing the activity
+			time.Sleep(wait)
+
+			// Do the activity
+			err := doActivity()
+			if err != nil {
+				clog.FatalErr(err)
+			}
+
+			clog.Infof("Finished Activity %d of %d...", i+1, numActivities)
+
+		}(i, waitDuration)
 	}
 
-	clog.Infof("Number of commits to be made right now: %d", numCommits)
+	// Main goroutine needs to wait for all the sub-goroutines to finish
+	wg.Wait()
 
-	for i := 0; i < numCommits; i++ {
-		clog.Infof("Processing Commit %d of %d...", i+1, numCommits)
-		err := doActivity()
-		if err != nil {
-			clog.FatalErr(err)
-		}
-	}
-
-	clog.Infof("Finished %d commits.", numCommits)
+	clog.Infof("Finished %d activities.", numActivities)
 
 	return
 }
@@ -125,6 +172,12 @@ func doGitCommit() error {
 	cmd := exec.Command("git", "commit", "-m", commitMessage)
 	var out bytes.Buffer
 	cmd.Stdout = &out
+
+	if !ENABLE_COMMMIT {
+		clog.Warnf("ENABLE_COMMMIT disabled. Not commiting any changes.")
+		return nil
+	}
+
 	err = cmd.Run()
 	if err != nil {
 		clog.Error(out.String())
@@ -139,6 +192,12 @@ func doGitPush() error {
 	cmd := exec.Command("git", "push")
 	var out bytes.Buffer
 	cmd.Stdout = &out
+
+	if !ENABLE_PUSH {
+		clog.Warnf("ENABLE_PUSH disabled. Not pushing any changes.")
+		return nil
+	}
+
 	err := cmd.Run()
 	if err != nil {
 		clog.Error(out.String())
@@ -165,6 +224,9 @@ func getRandomCommitMessage() (string, error) {
 		return "", err
 	}
 
+	if len(body) > MAX_COMMIT_MESSAGE_LEN {
+		return "", ErrCommitMessageTooLong
+	}
 	return string(body), nil
 }
 
