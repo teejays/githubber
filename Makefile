@@ -1,6 +1,6 @@
-PROJECT_NAME = githubber
+PROJECT_NAME = githubby
 
-GO_CMD = GO
+GO_CMD = go
 GO_BUILD = $(GO_CMD) build
 
 BINARY_EXT = .out
