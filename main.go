@@ -21,16 +21,21 @@ const (
 	FILE_NAME string = `changeme.txt`
 
 	NUM_ACTIVITIES_MIN int = 1
-	NUM_ACTIVITIES_MAX int = 7
+	NUM_ACTIVITIES_MAX int = 6
 
 	WAIT_DURATION_SECS_MIN int = 0
-	WAIT_DURATION_SECS_MAX int = 10
+	WAIT_DURATION_SECS_MAX int = 30
 
 	MAX_COMMIT_MESSAGE_LEN int = 200
 )
 
 var (
 	ErrCommitMessageTooLong error = fmt.Errorf("Commit message is too long, which could mean an error.")
+)
+
+var (
+	gitLock  sync.Mutex
+	fileLock sync.Mutex
 )
 
 func main() {
@@ -63,11 +68,12 @@ func main() {
 				wg.Done()
 			}()
 
-			clog.Infof("Processing Activity %d of %d...", i+1, numActivities)
-			clog.Infof(" - Going to wait for %s before doing the activity", wait)
+			clog.Infof("[Activity %d / %d] Going to wait for %s before doing the activity", i+1, numActivities, wait)
 
 			// Wait for sometime before doing the activity
 			time.Sleep(wait)
+
+			clog.Infof("[Activity %d / %d] Processing activity...", i+1, numActivities)
 
 			// Do the activity
 			err := doActivity()
@@ -75,7 +81,7 @@ func main() {
 				clog.FatalErr(err)
 			}
 
-			clog.Infof("Finished Activity %d of %d...", i+1, numActivities)
+			clog.Infof("[Activity %d / %d] Finished activity...", i+1, numActivities)
 
 		}(i, waitDuration)
 	}
@@ -90,43 +96,42 @@ func main() {
 
 func doActivity() (err error) {
 
-	clog.Info("Starting activity...")
-
-	clog.Info(" - Starting to code...")
+	clog.Debug(" - Starting to code...")
 	err = doCoding()
 	if err != nil {
 		return err
 	}
-	clog.Info(" - Finished coding.")
+	clog.Debug(" - Finished coding.")
 
-	clog.Info(" - Starting to add...")
+	clog.Debug(" - Starting to add...")
 	err = doGitAdd()
 	if err != nil {
 		return err
 	}
-	clog.Info(" - Finished adding.")
+	clog.Debug(" - Finished adding.")
 
-	clog.Info(" - Starting to commit...")
+	clog.Debug(" - Starting to commit...")
 	err = doGitCommit()
 	if err != nil {
 		return err
 	}
-	clog.Info(" - Finished commiting.")
+	clog.Debug(" - Finished commiting.")
 
-	clog.Info(" - Starting to push...")
+	clog.Debug(" - Starting to push...")
 	err = doGitPush()
 	if err != nil {
 		return err
 	}
-	clog.Info(" - Finished pushing.")
-
-	clog.Info("Finished activity.")
+	clog.Debug(" - Finished pushing.")
 
 	return
 
 }
 
 func doCoding() error {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+
 	// read the file
 	content, err := ioutil.ReadFile(FILE_NAME)
 	if err != nil {
@@ -134,7 +139,7 @@ func doCoding() error {
 	}
 
 	// change/append something
-	newText := fmt.Sprintf("This is a test commit on %s.\n", time.Now().Format(time.RFC1123Z))
+	newText := fmt.Sprintf("This is a change made on %s.\n", time.Now().Format(time.RFC1123Z))
 	newContent := append(content, []byte(newText)...)
 	// Write the file
 	err = ioutil.WriteFile(FILE_NAME, newContent, os.ModePerm)
@@ -150,12 +155,16 @@ func doGitAdd() error {
 	cmd := exec.Command("git", "add", FILE_NAME)
 	var out bytes.Buffer
 	cmd.Stdout = &out
+
+	gitLock.Lock()
+	defer gitLock.Unlock()
+
 	err := cmd.Run()
 	if err != nil {
 		clog.Error(out.String())
 		return err
 	}
-	clog.Info(out.String())
+	clog.Debug(out.String())
 	return nil
 }
 
@@ -168,6 +177,9 @@ func doGitCommit() error {
 	}
 
 	clog.Debugf("Using the commit message: %s", commitMessage)
+
+	gitLock.Lock()
+	defer gitLock.Unlock()
 
 	cmd := exec.Command("git", "commit", "-m", commitMessage)
 	var out bytes.Buffer
@@ -183,7 +195,8 @@ func doGitCommit() error {
 		clog.Error(out.String())
 		return err
 	}
-	clog.Info(out.String())
+
+	clog.Debug(out.String())
 
 	return nil
 }
@@ -198,12 +211,17 @@ func doGitPush() error {
 		return nil
 	}
 
+	gitLock.Lock()
+	defer gitLock.Unlock()
+
 	err := cmd.Run()
 	if err != nil {
 		clog.Error(out.String())
 		return err
 	}
-	clog.Info(out.String())
+
+	clog.Debug(out.String())
+
 	return nil
 }
 
@@ -225,6 +243,7 @@ func getRandomCommitMessage() (string, error) {
 	}
 
 	if len(body) > MAX_COMMIT_MESSAGE_LEN {
+		clog.Warnf("Commit message is too long:\n%s", string(body))
 		return "", ErrCommitMessageTooLong
 	}
 	return string(body), nil
