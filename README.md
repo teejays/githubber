@@ -3,7 +3,7 @@ GitHubby is the hubby your github has always needed. It comes in your life, and 
 
 ### Who are you? Are you one of the people whose Github profile looks like this?
 *<kbd>
-  ![Who you are](https://imgur.com/rsFMYog)
+  ![Who you are](https://i.imgur.com/rsFMYog.png)
 </kbd>
 
 This is so sad. You are so sad. You're a loser and you've always wanted not to be you.
