@@ -1,5 +1,5 @@
 # GitHubby
-GitHubby is the hubby your github has always needed. It comes in your life, and brings a lot of greens with it. Are you someonw who could do with some greens?
+GitHubby is the hubby your github has always needed. It comes in your life, and brings a lot of greens with it. Are you someone who could do with some greens?
 
 ### Who are you? Are you one of the people whose Github profile looks like this?
 *<kbd>
@@ -25,7 +25,7 @@ It is also pretty smart. In order to make it look more natural, it randomly sele
 * Request to be a contributer on this project.
 * Install Golang
 * Clone this package 
-* Install go dependecies by running `make install' from within this repository folder
+* Install go dependecies by running `make install` from within this repository folder
 * Build/compile the package using `make build`.
 
 ### Running
