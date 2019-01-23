@@ -41,6 +41,8 @@ var (
 func main() {
 	clog.Info("Initializing the githubber...")
 
+	clog.LogToSyslog = true
+
 	// How many commits should I make?
 	var numActivities int = getRandomInt(NUM_ACTIVITIES_MIN, NUM_ACTIVITIES_MAX)
 	clog.Infof("Number of activities to be made right now: %d", numActivities)
