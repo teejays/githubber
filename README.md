@@ -16,7 +16,7 @@ This is so sad. You are so sad. You're a loser and you've always wanted not to b
 Worry not, it's time to bring Githubby into your life and add some spice to your Github.
 
 ## What is Githubby?
-GitHubby is a git repository, duh. Within the git repository is a piece of code. Double duh. That piece of code, if set up right, kind of is a better version of you in a sense becuase it automatically contirbutes to it's own repository (make edits, git add files, commits, and pushes). It makes your Github look greener, something you could never manage.
+GitHubby is a git repository, duh. Within the git repository is a piece of code. Double duh. That piece of code, if set up right, kind of is a better version of you in a sense because it automatically contirbutes to it's own repository (make edits, git add files, commits, and pushes). It makes your Github look greener, something you could never manage.
 
 It is also pretty smart. In order to make it look more natural, it randomly selects the number commits to make and decides to randomly wait from anywhere to 1s to 1hr before making the commit. And, most importantly, the commit messages are pulled from http://whatthecommit.com/index.txt (which is a great project in itself).
 
