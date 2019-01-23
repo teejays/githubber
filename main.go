@@ -18,7 +18,7 @@ const (
 	ENABLE_COMMMIT bool = true
 	ENABLE_PUSH    bool = true
 
-	FILE_NAME string = `dummy.txt`
+	FILE_NAME string = `changeme.txt`
 
 	NUM_ACTIVITIES_MIN int = 1
 	NUM_ACTIVITIES_MAX int = 7
