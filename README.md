@@ -29,7 +29,7 @@ It is also pretty smart. In order to make it look more natural, it randomly sele
 * Build/compile the package using `make build`.
 
 ### Running
-From the project directory run `make run` to test this. The program will automatically make a change to the changeme.txt file, add the file to git, fetch a new commit message and run git commmit, and then push the changes upstream. If you have permisions to push the changes to the repository, everything should be fine. You should see contirbutions from you in the commits section of this project.
+From the project directory do `make run`. The program will automatically make a change to the changeme.txt file, add the file to git, fetch a new commit message and run git commmit, and then push the changes upstream. If you have permisions to push to this repository, everything should be fine. You'll see contirbutions from yourself in the commits section of this project.
 
-### Setting up
-Ideally, you should'nt have to run this manually. You can set up a cron job in your system to invoke the binary like `<path/to/repo>/githubby.out` at any time that you want. Shhh. Now, you're pretty active on Github. You can go find your next passion now.
+### Automate
+Ideally, you shouldn't have to run this manually. You can set up a cron job in your system to invoke the program automatically. Your cron job can call the command `<path/to/repo>/githubby.out` at a time of your choice. Shhh. Now, you're pretty active on Github. You can go find your next passion.
