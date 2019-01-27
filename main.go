@@ -174,8 +174,10 @@ func doCoding() error {
 	fileLock.Lock()
 	defer fileLock.Unlock()
 
+	filePath := filepath.Join(dirPath, FILE_NAME)
+
 	// read the file
-	content, err := ioutil.ReadFile(filepath.Join(dirPath, FILE_NAME))
+	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -184,7 +186,7 @@ func doCoding() error {
 	newText := fmt.Sprintf("This is a change made on %s.\n", time.Now().Format(time.RFC1123Z))
 	newContent := append(content, []byte(newText)...)
 	// Write the file
-	err = ioutil.WriteFile(FILE_NAME, newContent, os.ModePerm)
+	err = ioutil.WriteFile(filePath, newContent, os.ModePerm)
 	if err != nil {
 		return err
 	}
