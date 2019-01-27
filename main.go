@@ -222,9 +222,6 @@ func doGitCommit() error {
 
 	clog.Debugf("Using the commit message: %s", commitMessage)
 
-	gitLock.Lock()
-	defer gitLock.Unlock()
-
 	cmd := exec.Command("git", "-C", dirPath, "commit", "-m", commitMessage)
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -233,6 +230,9 @@ func doGitCommit() error {
 		clog.Warnf("Commits disabled during development mode. Not commiting any changes.")
 		return nil
 	}
+
+	gitLock.Lock()
+	defer gitLock.Unlock()
 
 	err = cmd.Run()
 	if err != nil {

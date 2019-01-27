@@ -20,12 +20,22 @@ build:
 run-dev:
 	$(BINARY_PATH) --dir $(CURRENT_DIR) --dev --wait-max 30 --max 3
 
+## Production
+PRD_WAIT_MAX = 7200
+
+RUN_CMD = $(BINARY_PATH) --dir $(CURRENT_DIR) --wait-max $(PRD_WAIT_MAX)
+
 CRON_TIME = 11 03 * * *
-CRON_JOB = "$(CRON_TIME) $(BINARY_PATH) --dir $(CURRENT_DIR) > $(LOGFILE_PATH) &"
+CRON_JOB = "$(CRON_TIME) $(RUN_CMD) > $(LOGFILE_PATH) &"
 CRON_TEMP_FILE = _cron.txt
 
-schedule: setup-logfile
-	echo $(CRON_JOB) > $(CRON_TEMP_FILE) && crontab $(CRON_TEMP_FILE)
+schedule: setup-logfile gen-cronfile schedule-cronfile
+	
+schedule-cronfile:
+	crontab $(CRON_TEMP_FILE)
+
+gen-cronfile:
+	echo $(CRON_JOB) > $(CRON_TEMP_FILE)
 
 setup-logfile:
 	echo > $(LOGFILE_PATH) && sudo chmod 777 $(LOGFILE_PATH)
