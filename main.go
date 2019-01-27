@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,16 +18,13 @@ import (
 )
 
 const (
-	ENABLE_COMMMIT bool = true
-	ENABLE_PUSH    bool = true
-
 	FILE_NAME string = `changeme.txt`
 
-	NUM_ACTIVITIES_MIN int = 1
-	NUM_ACTIVITIES_MAX int = 6
+	DEFAULT_NUM_ACTIVITIES_MIN int = 0
+	DEFAULT_NUM_ACTIVITIES_MAX int = 6
 
-	WAIT_DURATION_SECS_MIN int = 0
-	WAIT_DURATION_SECS_MAX int = 3600
+	DEFAULT_WAIT_DURATION_SECS_MIN int = 0
+	DEFAULT_WAIT_DURATION_SECS_MAX int = 3600
 
 	MAX_COMMIT_MESSAGE_LEN int = 200
 )
@@ -38,13 +38,53 @@ var (
 	fileLock sync.Mutex
 )
 
+var (
+	dev             bool
+	dirPath         string
+	numActivityMin  int
+	numActivityMax  int
+	waitDurationMin int
+	waitDurationMax int
+)
+
 func main() {
 	clog.Info("Initializing the githubber...")
 
 	clog.LogToSyslog = true
 
+	flag.BoolVar(&dev, "dev", false, "Pass this flag when running in development mode to skip commits and pushes.")
+	flag.StringVar(&dirPath, "dir", "", "The path for the git repo, where there is a file named changeme.txt.")
+
+	flag.IntVar(&numActivityMin, "min", DEFAULT_NUM_ACTIVITIES_MIN, "Pass this to set the minimum number of activities allowed.")
+	flag.IntVar(&numActivityMax, "max", DEFAULT_NUM_ACTIVITIES_MAX, "Pass this to set the maximum number of activities allowed.")
+
+	flag.IntVar(&waitDurationMin, "wait-min", DEFAULT_WAIT_DURATION_SECS_MIN, "Pass this to override the minimum number of seconds to wait before an activity.")
+	flag.IntVar(&waitDurationMax, "wait-max", DEFAULT_WAIT_DURATION_SECS_MAX, "Pass this to override the maximum number of seconds to wait before an activity.")
+
+	flag.Parse()
+
+	if strings.TrimSpace(dirPath) == "" {
+		clog.Fatal("Invalid dirPath: cannot be empty")
+	}
+	if numActivityMin < 0 {
+		clog.Fatal("Invalid numActivityMin: cannot be less than 0")
+	}
+	if numActivityMax < 0 {
+		clog.Fatal("Invalid numActivityMax: cannot be less than 0")
+	}
+	if waitDurationMin < 0 {
+		clog.Fatal("Invalid waitDurationMin: cannot be less than 0")
+	}
+	if waitDurationMax < 0 {
+		clog.Fatal("Invalid waitDurationMax: cannot be less than 0")
+	}
+
+	if dev {
+		clog.Notice("Running in DEVELOPMENT mode")
+	}
+
 	// How many commits should I make?
-	var numActivities int = getRandomInt(NUM_ACTIVITIES_MIN, NUM_ACTIVITIES_MAX)
+	var numActivities int = getRandomInt(numActivityMin, numActivityMax)
 	clog.Infof("Number of activities to be made right now: %d", numActivities)
 
 	// WaitGroup for concurrency
@@ -54,7 +94,7 @@ func main() {
 
 		// For each activity, we should probably add some randomized wait times (between 1 and 3600 secs)
 		// so the commit history looks natural,
-		waitDuration := time.Second * time.Duration(getRandomInt(WAIT_DURATION_SECS_MIN, WAIT_DURATION_SECS_MAX))
+		waitDuration := time.Second * time.Duration(getRandomInt(waitDurationMin, waitDurationMax))
 
 		// Add a counter to wait group so we can keep track of how many concurrent goroutines are running
 		wg.Add(1)
@@ -135,7 +175,7 @@ func doCoding() error {
 	defer fileLock.Unlock()
 
 	// read the file
-	content, err := ioutil.ReadFile(FILE_NAME)
+	content, err := ioutil.ReadFile(filepath.Join(dirPath, FILE_NAME))
 	if err != nil {
 		return err
 	}
@@ -154,7 +194,7 @@ func doCoding() error {
 }
 
 func doGitAdd() error {
-	cmd := exec.Command("git", "add", FILE_NAME)
+	cmd := exec.Command("git", "-C", dirPath, "add", FILE_NAME)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
@@ -183,12 +223,12 @@ func doGitCommit() error {
 	gitLock.Lock()
 	defer gitLock.Unlock()
 
-	cmd := exec.Command("git", "commit", "-m", commitMessage)
+	cmd := exec.Command("git", "-C", dirPath, "commit", "-m", commitMessage)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
-	if !ENABLE_COMMMIT {
-		clog.Warnf("ENABLE_COMMMIT disabled. Not commiting any changes.")
+	if dev {
+		clog.Warnf("Commits disabled during development mode. Not commiting any changes.")
 		return nil
 	}
 
@@ -204,12 +244,12 @@ func doGitCommit() error {
 }
 
 func doGitPush() error {
-	cmd := exec.Command("git", "push")
+	cmd := exec.Command("git", "-C", dirPath, "push")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
-	if !ENABLE_PUSH {
-		clog.Warnf("ENABLE_PUSH disabled. Not pushing any changes.")
+	if dev {
+		clog.Warnf("Pushed disabled during development mode. Not pushing any changes.")
 		return nil
 	}
 

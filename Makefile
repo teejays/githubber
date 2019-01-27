@@ -1,5 +1,6 @@
 PROJECT_NAME = githubby
 
+CURRENT_DIR = $(shell pwd)
 GO_CMD = go
 GO_BUILD = $(GO_CMD) build
 
@@ -11,6 +12,9 @@ install:
 
 build:
 	$(GO_BUILD) -o $(BINARY_NAME) main.go
+
+run-dev:
+	./$(BINARY_NAME) --dir $(CURRENT_DIR) --dev --wait-max 30 --max 3
 
 run:
 	./$(BINARY_NAME)
